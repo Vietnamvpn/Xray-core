@@ -1,0 +1,38 @@
+name: Build and Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Build Xray
+        run: |
+          go build -o xray -trimpath -ldflags "-s -w -buildid=" ./main
+
+      - name: Create ZIP
+        run: |
+          # Đổi tên thành Xray-linux-64.zip để khớp với script cũ trên VPS
+          zip Xray-linux-64.zip xray
+
+      - name: Upload to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: Xray-linux-64.zip
+          tag: ${{ github.ref }}
+          file_glob: true
